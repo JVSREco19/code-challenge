@@ -1,0 +1,6 @@
+airflow_dbdata
+data/csv
+data/postgres
+dags/__pycache__
+dbdata
+logs

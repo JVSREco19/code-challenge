@@ -12,3 +12,60 @@ services:
       - ./data/northwind.sql:/docker-entrypoint-initdb.d/northwind.sql
     ports:
       - 5432:5432
+
+  airflow:
+    image: apache/airflow:2.5.1
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: "postgresql+psycopg2://northwind_user:thewindisblowing@db/northwind"
+      AIRFLOW__CORE__EXECUTOR: "LocalExecutor"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./data:/opt/airflow/data
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    command: ["bash", "-c", "airflow db init && airflow webserver"]
+
+  meltano:
+    image: meltano/meltano:latest
+    volumes:
+      - ./meltano:/meltano
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: northwind_user
+      POSTGRES_PASSWORD: thewindisblowing
+      POSTGRES_DB: northwind
+      TARGET_DB_HOST: target_db
+      TARGET_DB_PORT: 5432
+      TARGET_DB_USER: target_user
+      TARGET_DB_PASSWORD: targetpass
+      TARGET_DB_NAME: northwind_target
+    depends_on:
+      - db
+      - target_db
+  airflow-scheduler:
+    image: apache/airflow:2.5.1
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: "postgresql+psycopg2://northwind_user:thewindisblowing@db/northwind"
+      AIRFLOW__CORE__EXECUTOR: "LocalExecutor"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./data:/opt/airflow/data
+    depends_on:
+      - db
+    command: ["airflow", "scheduler"]
+
+  target_db:
+    image: postgres:12
+    environment:
+      POSTGRES_DB: northwind_target
+      POSTGRES_USER: target_user
+      POSTGRES_PASSWORD: targetpass
+    volumes:
+      - ./target_dbdata:/var/lib/postgresql/data
+    ports:
+      - 5433:5432
