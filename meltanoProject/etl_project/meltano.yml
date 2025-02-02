@@ -1,0 +1,20 @@
+version: 1
+default_environment: dev
+project_id: b450065f-cc16-4d37-b311-3b03f07545c8
+environments:
+- name: dev
+- name: staging
+- name: prod
+plugins:
+  extractors:
+  - name: tap-postgres
+    variant: meltanolabs
+    pip_url: git+https://github.com/MeltanoLabs/tap-postgres.git
+    config:
+      host: db
+      database: northwind
+      user: northwind_user
+  loaders:
+  - name: target-jsonl
+    variant: andyh1203
+    pip_url: target-jsonl
