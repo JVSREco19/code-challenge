@@ -1,0 +1,92 @@
+version: 1
+default_environment: dev
+project_id: b06367ec-2869-42d9-839f-8cc0f0261f4b
+environments:
+- name: dev
+- name: staging
+- name: prod
+plugins:
+  extractors:
+  - name: tap-postgres
+    variant: meltanolabs
+    pip_url: git+https://github.com/MeltanoLabs/tap-postgres.git
+    config:
+      host: localhost
+      port: 5432
+      user: northwind_user
+      password: thewindisblowing
+      database: northwind
+      ssl: 'false'
+    select:
+      - public*
+      - public-*.*
+
+    # tap-csv (to read CSV files for reloading)
+  - name: tap-csv
+    variant: meltanolabs
+    pip_url: git+https://github.com/MeltanoLabs/tap-csv.git
+    config:
+      delimiter: ','
+      cast:
+        category_id: integer
+      files:
+      - entity: categories
+        path: load/public-categories.csv
+        keys: [category_id]   
+
+      - entity: customers
+        path: load/public-customers.csv
+        keys: [customer_id]
+
+      - entity: employees
+        path: load/public-employees.csv
+        keys: [employee_id]
+
+      - entity: orders
+        path: load/public-orders.csv
+        keys: [order_id]
+
+      - entity: products
+        path: load/public-products.csv
+        keys: [product_id]
+
+      - entity: shippers
+        path: load/public-shippers.csv
+        keys: [shipper_id]
+
+      - entity: suppliers
+        path: load/public-suppliers.csv
+        keys: [supplier_id]
+
+      - entity: territories
+        path: load/public-territories.csv
+        keys: [territory_id]
+
+      - entity: us_states
+        path: load/public-us_states.csv
+        keys: [state_id]
+
+      - entity: order_details
+        path: ../data/order_details.csv
+        keys: [order_id, product_id]
+
+  loaders:
+    # Original target-csv (for saving extracted data to CSV)
+  - name: target-csv
+    variant: meltanolabs
+    pip_url: git+https://github.com/MeltanoLabs/target-csv.git
+    config:
+      destination_path: load
+
+    # target-postgres (to load CSV data back into PostgreSQL)
+  - name: target-postgres
+    variant: meltanolabs
+    pip_url: git+https://github.com/MeltanoLabs/target-postgres.git
+    config:
+      host: localhost         # Same as tap-postgres
+      port: 5432              # Same as tap-postgres
+      user: northwind_user    # Same as tap-postgres
+      password: thewindisblowing
+      database: northwind       # Same database
+      default_target_schema: public
+    
